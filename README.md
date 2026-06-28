@@ -106,6 +106,18 @@ curl http://localhost:5000/entry_json/AAPL/2024-02-08
   refreshes nothing until tickers exist — hit a few `entry` URLs first to seed them).
 - `data_push.py` can be run directly to bulk-load a ticker over a date range.
 
+## Tests
+
+```
+.venv\Scripts\python -m unittest discover -s tests
+```
+
+`tests/test_data_source.py` pins the behaviour we depend on from `thetadata` — the frame columns
+and dtypes, the inserted dict shape, the `volume=0` index quirk, and `NoDataFoundError` on no-data
+dates — so a future library release that changes the contract fails here instead of silently
+breaking the DB insert. The integration tests need ThetaData creds (`THETADATA_CREDS_FILE`, default
+`secrets/theta_creds.json`) and skip automatically without them; the routing tests always run.
+
 ## Deployment
 
 - **Local (Windows)** — `thetaservice.bat`, Postgres as a local service.
