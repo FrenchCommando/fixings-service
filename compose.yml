@@ -1,0 +1,61 @@
+name: fixings-service
+
+# STACK — joins the proxy-auth auth stack's external `proxy` network (the only coupling),
+# mirroring proxy-auth/sample-app.
+#   Invariant 1: no published host ports — reachability is via `proxy`.
+#   Invariant 2: the app joins `proxy`; the db joins ONLY the private `internal` net.
+# Config is the single-source env contract (see .env.example); secrets are mounted files,
+# generated on the Pi and never committed.
+
+networks:
+  proxy:
+    external: true     # created by the auth stack; do NOT create it here
+  internal:
+    driver: bridge
+
+services:
+  app:
+    build: .                       # arm64: build on the Pi (native) — `docker compose up -d --build`
+    container_name: fixings-service   # the name the docker nginx upstream resolves
+    restart: unless-stopped
+    depends_on:
+      - db
+    expose:
+      - "5000"                     # internal only — NO published host port (invariant 1)
+    environment:
+      PG_HOST: fixings-service-db
+      PG_PORT: "5432"
+      PG_DATABASE: fixings
+      POSTGRES_USER: fixings_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password   # same secret the db uses
+      THETADATA_CREDS_FILE: /run/secrets/theta_creds
+    secrets:
+      - db_password
+      - theta_creds
+    networks:
+      - proxy        # so the docker nginx can reach it by name
+      - internal     # so it can reach the db
+
+  db:
+    image: postgres:17-alpine      # matches the local Postgres major (17.x); pin as needed
+    container_name: fixings-service-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fixings
+      POSTGRES_USER: fixings_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - internal     # private — never proxy
+
+secrets:
+  db_password:
+    file: ./secrets/db_password         # raw password; gitignored, created on the Pi
+  theta_creds:
+    file: ./secrets/theta_creds.json    # JSON {"email","password"}; gitignored
+
+volumes:
+  db-data:

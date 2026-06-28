@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.git/
+.gitignore
+secrets/
+.env
+*.example
+NOTES.md
+VISION.md
+README.md
+deploy/

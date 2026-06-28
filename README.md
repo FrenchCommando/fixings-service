@@ -54,23 +54,20 @@ Indices (`SPX`, `VIX`, `RUT`, `DJX`) come from ThetaData's index endpoint and ha
 .venv\Scripts\python -m pip install -r requirements.txt
 ```
 
-**2. ThetaData credentials** — copy `creds.json.example` to `creds.json` and fill in your account:
-
-```json
-{ "email": "you@example.com", "password": "your-thetadata-password" }
-```
-
-**3. Postgres** — create the role and database:
+**2. Secrets** — config comes from the environment, secrets from files under `secrets/` (single
+source, no fallbacks; see `.env.example`). Create them:
 
 ```
-createuser fixings_user --pwprompt        # password: fixings_pass (or your own)
+mkdir secrets
+copy theta_creds.json.example secrets\theta_creds.json   # then fill in your ThetaData account
+echo your-db-password> secrets\db_password               # the Postgres password (any value)
+```
+
+**3. Postgres** — create the role and database (use the same password you put in `secrets\db_password`):
+
+```
+createuser fixings_user --pwprompt
 createdb fixings -O fixings_user
-```
-
-Then copy `db_secrets.json.example` to `db_secrets.json` with the matching credentials:
-
-```json
-{ "user": "fixings_user", "password": "fixings_pass" }
 ```
 
 The `fixings_table` is created automatically on first startup (idempotent `CREATE TABLE IF NOT
@@ -80,23 +77,20 @@ it doesn't exist.
 > `db_main.py` is a **destructive** dev helper — its `main()` drops and rebuilds the table. Don't run
 > it against a populated DB.
 
-> `creds.json` and `db_secrets.json` are gitignored — credentials never leave the host. `db_secrets.py`
-> is committed (it's a generic loader with no secrets in it).
+> `secrets/` is gitignored — credentials never leave the host. Only the `*.example` templates and the
+> env-based loaders (`db_secrets.py`, `data_source.py`, which hold no secrets) are committed.
 
 ## Run
 
-```
-.venv\Scripts\python -m service
-```
-
-or use the launcher, which starts the service and opens a browser:
+Use the launcher — it sets the environment contract and opens a browser:
 
 ```
 thetaservice.bat
 ```
 
-Then visit `http://localhost:5000/`. Drop a shortcut to `thetaservice.bat` in the Windows Startup
-folder to run it on login.
+(Running `python -m service` directly works too, but only once the env vars from `.env.example` are
+set — the launcher does that for you.) Then visit `http://localhost:5000/`. Drop a shortcut to
+`thetaservice.bat` in the Windows Startup folder to run it on login.
 
 Quick checks:
 
@@ -114,14 +108,25 @@ curl http://localhost:5000/entry_json/AAPL/2024-02-08
 
 ## Deployment
 
-- **Local (Windows)** — the supported path today: `thetaservice.bat`, Postgres as a local service.
-- **Self-hosted (Raspberry Pi)** — the intended target. Because the data is **licensed and cannot be
-  redistributed**, it must stay server-side: Postgres + this service behind an **nginx** reverse
-  proxy (TLS, and basic-auth since the service has no auth of its own and aiohttp binds all
-  interfaces). Credentials live on the Pi, never in the repo.
+- **Local (Windows)** — `thetaservice.bat`, Postgres as a local service.
 - **GitHub Pages** — off the table for real data (licensing). At most a static demo against synthetic data.
-- **Docker / docker-compose** — _planned, not yet written._ Would bundle the service with Postgres;
-  needs the DB host/credentials made env-configurable first.
+- **Self-hosted (Raspberry Pi) via Docker** — the intended target. `Dockerfile` + `compose.yml` make
+  the service an app behind the [`proxy-auth`](../proxy-auth) Authelia/nginx stack (it joins the
+  external `proxy` network like `sample-app`; Authelia provides auth, so the service has none of its
+  own). On the Pi:
+
+  ```sh
+  mkdir -p secrets
+  echo "$(openssl rand -hex 24)" > secrets/db_password        # generated on the Pi, never committed
+  cp theta_creds.json.example secrets/theta_creds.json        # then fill in your ThetaData account
+  chmod 600 secrets/*
+  docker compose up -d --build                                # native arm64 build on the Pi
+  ```
+
+  Then wire it into the auth stack: copy `deploy/nginx/fixings.conf` into the auth stack's `conf.d/`
+  (set the `server_name`) and add an Authelia `access_control` rule (`fixings.<domain> → two_factor`).
+  The `fixings` data is **re-derivable** (re-fetch via `/entry` hits or `/refresh`), so the `db-data`
+  volume is the only state and the Pi stays disposable.
 
 ## Files
 
@@ -132,6 +137,9 @@ curl http://localhost:5000/entry_json/AAPL/2024-02-08
 | `data_push.py` | load/refresh data into Postgres |
 | `db_*.py` | Postgres schema and access |
 | `index.html` | minimal UI |
-| `thetaservice.bat` | launcher (service + browser) |
-| `creds.json` / `db_secrets.json` | credentials (gitignored) |
+| `thetaservice.bat` | local launcher (sets env, runs service, opens browser) |
+| `Dockerfile` / `compose.yml` | container image + app+db stack for the Pi |
+| `deploy/nginx/fixings.conf` | nginx server block to copy into the proxy-auth stack |
+| `.env.example` / `theta_creds.json.example` | env contract + creds template |
+| `secrets/` | `db_password` + `theta_creds.json` (gitignored) |
 | `NOTES.md` / `VISION.md` | design decisions / goals |

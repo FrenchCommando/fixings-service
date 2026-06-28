@@ -3,7 +3,7 @@
 __pycache__/
 *.pyc
 
-# Credentials — never commit (thetadata creds, db secrets)
-# Note: db_secrets.py is committed (generic loader, no secrets); only db_secrets.json is ignored.
-creds.json
-db_secrets.json
+# Secrets — generated locally / on the Pi, never committed.
+# The db_secrets.py / data_source.py loaders are committed (they read env, hold no secrets).
+secrets/
+.env

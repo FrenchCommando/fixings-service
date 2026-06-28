@@ -1,5 +1,6 @@
 import datetime as dt
 import json
+import os
 from pathlib import Path
 
 import yfinance as yf
@@ -9,17 +10,16 @@ from thetadata.errors import NoDataFoundError  # re-exported so service.py can c
 # These indices have no per-share volume; ThetaData serves them on a separate endpoint.
 INDEX_SYMBOLS = {"SPX", "VIX", "RUT", "DJX"}
 
-# ThetaData credentials live in creds.json ({"email": ..., "password": ...}), mirroring
-# db_secrets.json. Gitignored; copy creds.json.example to get started.
-_CREDS_FILE = Path(__file__).resolve().parent / "creds.json"
-
+# ThetaData credentials: a JSON file {"email": ..., "password": ...} pointed to by
+# THETADATA_CREDS_FILE (a mounted secret, e.g. /run/secrets/theta_creds). Single source,
+# no fallback — read lazily so DB-only requests don't require it.
 _client = None  # ThetaClient authenticates on construction, so build it once and reuse.
 
 
 def _get_client():
     global _client
     if _client is None:
-        creds = json.loads(_CREDS_FILE.read_text())
+        creds = json.loads(Path(os.environ["THETADATA_CREDS_FILE"]).read_text())
         _client = ThetaClient(
             email=creds["email"], password=creds["password"], dataframe_type="pandas",
         )
