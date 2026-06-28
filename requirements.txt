@@ -1,0 +1,10 @@
+# Data sources
+thetadata        # native gRPC client (replaces the ThetaTerminal.jar REST hop)
+python-dotenv    # thetadata 1.0.9 imports `dotenv` but fails to declare it as a dep
+yfinance         # backup source / historical reach before June 2023
+
+# Web service
+aiohttp          # HTTP server (service.py)
+
+# Database
+asyncpg          # async PostgreSQL driver
