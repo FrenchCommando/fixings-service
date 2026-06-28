@@ -5,5 +5,5 @@ __pycache__/
 
 # Credentials — never commit (thetadata creds, db secrets)
 # Note: db_secrets.py is committed (generic loader, no secrets); only db_secrets.json is ignored.
-creds.txt
+creds.json
 db_secrets.json

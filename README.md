@@ -54,16 +54,11 @@ Indices (`SPX`, `VIX`, `RUT`, `DJX`) come from ThetaData's index endpoint and ha
 .venv\Scripts\python -m pip install -r requirements.txt
 ```
 
-**2. ThetaData credentials** — create `creds.txt` in the project root, email on line 1, password on
-line 2:
+**2. ThetaData credentials** — copy `creds.json.example` to `creds.json` and fill in your account:
 
+```json
+{ "email": "you@example.com", "password": "your-thetadata-password" }
 ```
-you@example.com
-your-password
-```
-
-`data_source.py` looks for credentials in this order: `$THETADATA_CREDENTIALS_FILE`, then project
-`creds.txt`, then the legacy `~/ThetaData/secrets.txt` (same format).
 
 **3. Postgres** — create the role and database:
 
@@ -72,7 +67,7 @@ createuser fixings_user --pwprompt        # password: fixings_pass (or your own)
 createdb fixings -O fixings_user
 ```
 
-Put the matching credentials in `db_secrets.json`:
+Then copy `db_secrets.json.example` to `db_secrets.json` with the matching credentials:
 
 ```json
 { "user": "fixings_user", "password": "fixings_pass" }
@@ -85,7 +80,7 @@ it doesn't exist.
 > `db_main.py` is a **destructive** dev helper — its `main()` drops and rebuilds the table. Don't run
 > it against a populated DB.
 
-> `creds.txt` and `db_secrets.json` are gitignored — credentials never leave the host. `db_secrets.py`
+> `creds.json` and `db_secrets.json` are gitignored — credentials never leave the host. `db_secrets.py`
 > is committed (it's a generic loader with no secrets in it).
 
 ## Run
@@ -138,5 +133,5 @@ curl http://localhost:5000/entry_json/AAPL/2024-02-08
 | `db_*.py` | Postgres schema and access |
 | `index.html` | minimal UI |
 | `thetaservice.bat` | launcher (service + browser) |
-| `creds.txt` / `db_secrets.json` | credentials (gitignored) |
+| `creds.json` / `db_secrets.json` | credentials (gitignored) |
 | `NOTES.md` / `VISION.md` | design decisions / goals |

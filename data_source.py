@@ -1,5 +1,5 @@
 import datetime as dt
-import os
+import json
 from pathlib import Path
 
 import yfinance as yf
@@ -9,32 +9,20 @@ from thetadata.errors import NoDataFoundError  # re-exported so service.py can c
 # These indices have no per-share volume; ThetaData serves them on a separate endpoint.
 INDEX_SYMBOLS = {"SPX", "VIX", "RUT", "DJX"}
 
-# Candidate credential locations, in priority order. The native client wants a file with
-# the email on line 1 and the password on line 2 -- the same format the old ThetaTerminal
-# JAR used for its secrets.txt, so the legacy file works as a fallback.
-_CREDS_CANDIDATES = (
-    os.getenv("THETADATA_CREDENTIALS_FILE"),
-    Path(__file__).resolve().parent / "creds.txt",
-    Path.home() / "ThetaData" / "secrets.txt",
-)
+# ThetaData credentials live in creds.json ({"email": ..., "password": ...}), mirroring
+# db_secrets.json. Gitignored; copy creds.json.example to get started.
+_CREDS_FILE = Path(__file__).resolve().parent / "creds.json"
 
 _client = None  # ThetaClient authenticates on construction, so build it once and reuse.
-
-
-def _creds_file():
-    for candidate in _CREDS_CANDIDATES:
-        if candidate and Path(candidate).is_file():
-            return str(candidate)
-    raise FileNotFoundError(
-        "No ThetaData credentials found. Set THETADATA_CREDENTIALS_FILE, or create "
-        "creds.txt (email on line 1, password on line 2) in the project directory."
-    )
 
 
 def _get_client():
     global _client
     if _client is None:
-        _client = ThetaClient(creds_file=_creds_file(), dataframe_type="pandas")
+        creds = json.loads(_CREDS_FILE.read_text())
+        _client = ThetaClient(
+            email=creds["email"], password=creds["password"], dataframe_type="pandas",
+        )
     return _client
 
 

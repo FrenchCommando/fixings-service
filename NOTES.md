@@ -23,8 +23,9 @@ swap the ThetaTerminal JAR for ThetaData's native Python package, keep yfinance 
 ThetaData is account-gated even on the free tier; the data is licensed, not public-domain. Therefore
 **the real fixings can never be redistributed publicly** → public GitHub Pages is OFF the table.
 Target deployment is personal/self-hosted (Raspberry Pi + Docker + nginx), credentials server-side.
-GitHub Pages could at most host a demo with synthetic/sample data. `.gitignore` keeps all credential
-files (`creds.txt`, `.env`, `db_secrets.*`, `secrets.txt`) and `.venv` out of any repo.
+GitHub Pages could at most host a demo with synthetic/sample data. `.gitignore` keeps the credential
+files (`creds.json`, `db_secrets.json`) and `.venv` out of any repo; the `*.example` templates and the
+`db_secrets.py` loader are committed (no secrets in them).
 
 User has a VALUE-level subscription (for options), so credentials are a non-issue for them.
 
@@ -42,9 +43,9 @@ Done:
 - **3 `except httpx.HTTPStatusError` clauses in `service.py`** (handle_entry, handle_entry_json,
   handle_entry_close) retargeted to `except NoDataFoundError` (re-exported from `data_source`).
   This was the only place the swap leaked beyond `data_source.py`.
-- Creds: native client reads `creds.txt` (email line 1, password line 2 — same format as the JAR's
-  `secrets.txt`). `data_source._creds_file()` tries `$THETADATA_CREDENTIALS_FILE`, then project
-  `creds.txt`, then the legacy `~/ThetaData/secrets.txt`. `creds.txt` is gitignored.
+- Creds: `data_source._get_client()` reads `creds.json` (`{"email", "password"}`) and passes them to
+  `ThetaClient(email=, password=)` — chosen over the JAR's line-based `secrets.txt` so creds match the
+  JSON shape of `db_secrets.json`. `creds.json` is gitignored; `creds.json.example` is the template.
 
 ### Column mapping — CONFIRMED against the VALUE account
 `stock_history_eod` / `index_history_eod` return a pandas frame with lowercase columns:
