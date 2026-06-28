@@ -128,6 +128,9 @@ curl http://localhost:5000/entry_json/AAPL/2024-02-08
   The `fixings` data is **re-derivable** (re-fetch via `/entry` hits or `/refresh`), so the `db-data`
   volume is the only state and the Pi stays disposable.
 
+  **Full runbook:** [`deploy/SETUP.md`](deploy/SETUP.md) — from-zero steps, secret generation, auth
+  wiring, edge TLS, seeding.
+
 ## Files
 
 | File | Purpose |
