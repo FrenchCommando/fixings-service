@@ -1,0 +1,28 @@
+# Seed ticker list for `python -m seed` — one symbol per line.
+# Blank lines and lines starting with '#' are ignored. Edit freely and re-run the seeder;
+# it is idempotent (existing rows are skipped on the unique (ticker, date) key).
+#
+# Indices come from ThetaData's index endpoint (volume = 0); NDX uses the yfinance path
+# (see yf_mapping in data_source.py). The rest are stock/ETF symbols off the stock endpoint.
+
+# Indices
+SPX
+VIX
+RUT
+DJX
+NDX
+
+# Core ETFs
+SPY
+QQQ
+IWM
+DIA
+
+# Mega-cap single names
+AAPL
+MSFT
+NVDA
+AMZN
+GOOGL
+META
+TSLA

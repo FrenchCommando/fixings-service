@@ -101,10 +101,14 @@ curl http://localhost:5000/entry_json/AAPL/2024-02-08
 
 ## Loading data
 
+- **Seeding a fresh DB** — `python -m seed` fetches the last 364 days for every symbol in
+  `seed_tickers.txt`, registering the tickers and filling their history in one pass. Idempotent
+  (skips existing rows), so re-run after editing the list. Inside the container:
+  `docker compose exec app python -m seed`.
 - The `entry` / `close` endpoints backfill a single missing `(ticker, date)` on demand.
 - `/refresh` re-fetches the last 364 days for **every ticker already in the table** (so a fresh DB
-  refreshes nothing until tickers exist — hit a few `entry` URLs first to seed them).
-- `data_push.py` can be run directly to bulk-load a ticker over a date range.
+  refreshes nothing until tickers exist — seed first, or hit a few `entry` URLs).
+- `data_push.py` can be run directly to bulk-load a single ticker over a date range.
 
 ## Tests
 
@@ -150,6 +154,7 @@ breaking the DB insert. The integration tests need ThetaData creds (`THETADATA_C
 | `service.py` | aiohttp web server + routes |
 | `data_source.py` | ThetaData (gRPC) + yfinance fetchers |
 | `data_push.py` | load/refresh data into Postgres |
+| `seed.py` / `seed_tickers.txt` | bootstrap a fresh DB with a year of history for a ticker list |
 | `db_*.py` | Postgres schema and access |
 | `index.html` | minimal UI |
 | `thetaservice.bat` | local launcher (sets env, runs service, opens browser) |

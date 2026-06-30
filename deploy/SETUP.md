@@ -88,11 +88,19 @@ return "No entry found" until data exists (see seeding below).
 
 ## Seeding data
 
-The Pi DB starts empty (local data isn't migrated, and it's re-derivable anyway):
+The Pi DB starts empty (local data isn't migrated, and it's re-derivable anyway). The fastest
+path is the bundled seeder — it fetches the last 364 days for every symbol in `seed_tickers.txt`,
+which both registers the tickers and fills their history in one pass:
 
-- Hit `/entry/{ticker}/{date}` URLs — each backfills on demand, which also seeds the ticker list.
-- Once tickers exist, `/refresh` pulls the last 364 days for all of them.
-- Or migrate an existing table with `pg_dump` / `pg_restore` for the history immediately.
+```sh
+docker compose exec app python -m seed     # idempotent; re-run after editing seed_tickers.txt
+```
+
+After that, `/refresh` keeps every seeded ticker current. Alternatives:
+
+- Hit `/entry/{ticker}/{date}` URLs — each backfills on demand, which also seeds the ticker list
+  (handy for a one-off symbol not in `seed_tickers.txt`).
+- Migrate an existing table with `pg_dump` / `pg_restore` for the history immediately.
 
 ## Updating later
 
