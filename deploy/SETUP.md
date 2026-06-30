@@ -23,6 +23,16 @@ git clone https://github.com/FrenchCommando/fixings-service.git ~/fixings-servic
 cd ~/fixings-service
 ```
 
+> **Minimal footprint (prebuilt-image deploy).** Cloning is just a convenient way to lay out the
+> directory; when you run the shipped arm64 image (the supported path — see `CLAUDE.md §2`, *not*
+> the native `--build` in step 3), the only host files that actually matter are: **`compose.yml`**
+> (edited to `image: fixings-service:arm64` + `security_opt: [seccomp=unconfined]`, not `build: .`),
+> **`secrets/db_password`** + **`secrets/theta_creds.json`**, and the **`fixings-arm64.tar`** you
+> `docker load`. Everything else — all `*.py` (incl. `seed.py`), `seed_tickers.txt`, `index.html`,
+> `Dockerfile`, `requirements.txt`, the docs — is baked into the image and inert on the host. That's
+> why `docker compose exec app python -m seed` runs the image's copy of the seeder, so the tar must
+> be rebuilt after any code change for it to take effect.
+
 ## 2. Create the secrets (on the Pi — never committed)
 
 ```sh
