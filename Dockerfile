@@ -15,8 +15,9 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Source only — secrets are mounted at runtime (see compose), never baked in.
-COPY *.py index.html ./
+# Source + data files (seed_tickers.txt feeds `python -m seed`) — secrets are mounted at
+# runtime (see compose), never baked in.
+COPY *.py index.html seed_tickers.txt ./
 
 EXPOSE 5000
 CMD ["python", "-m", "service"]
